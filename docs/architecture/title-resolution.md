@@ -569,14 +569,32 @@ qualifies it. The whole name is compared, before any cut to `BranchMax`: cut
 down, `chore-prettierignore-nested-worktrees` no longer matches its directory,
 and the title would say the one fact twice, in two spellings.
 
-The rule is about a pane whose *own* directory is a worktree — a user who moved
-into one and is working there themselves. A branch that came from an agent's
-directory never reaches it: the context stays the pane's, so the two halves are
-read from different directories and are two facts rather than one.
+A directory is shortened by the same `BranchMax` rules as a branch suffix when
+its full basename matches the pane's own branch or carries a tracker key.
+`stytrix-beta.st-146-e2e-ai-chat-etc` becomes `ST-146`, even without matching
+checkout metadata: the directory's key already identifies the work. A branch
+suffix reduced to the same label is dropped too, so the key appears only once.
 
-Exactly, and no more than that — the rule below makes the same trade. A worktree
-whose directory spells its branch differently (`xl-knp-3` against `xl-knp.3`)
-keeps both, because nothing here can tell a near-miss from two real facts.
+Short names and directories with neither a matching branch nor a tracker key
+stay whole; `BranchMax=0` leaves directory names unchanged. A name with no usable
+abbreviation stays whole too, so a narrow bound cannot erase the context. A long
+directory matching the default branch is shortened even though that branch adds
+no suffix.
+
+The full directory name remains the comparison value for the activity, agent
+handle, workspace and tab above a pane. Only the context still left after those
+checks is replaced with its shortened label, so a shared abbreviation never
+makes two different full names count as duplicate contexts. The underlying
+directory is never renamed.
+
+Only the pane's own directory supplies context. An agent sent into a worktree
+still leaves the project context at the pane's directory; its branch stays
+alongside that context unless the two displayed labels repeat the same value.
+
+Names with neither a matching branch nor a tracker key retain exact comparison.
+A worktree whose directory spells its branch differently (`xl-knp-3` against
+`xl-knp.3`) keeps both, because nothing here can tell a near-miss from two real
+facts.
 
 ## The workspace topic
 

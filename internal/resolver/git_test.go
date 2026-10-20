@@ -236,7 +236,7 @@ func TestAWorktreeNamedAfterALongBranchSaysItOnce(t *testing.T) {
 	pane.TerminalTitle = "auth.ts - Nvim"
 	pane.Processes = []state.Process{{Name: "nvim"}}
 
-	if got := resolveRepoPane(pane); got != "fix-login-redirect › nvim › auth.ts" {
+	if got := resolveRepoPane(pane); got != "fix-login › nvim › auth.ts" {
 		t.Errorf("title %q, want the branch said once", got)
 	}
 }
