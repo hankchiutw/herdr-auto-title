@@ -1,6 +1,12 @@
 package resolver
 
-import "github.com/kryptamine/herdr-auto-title/internal/state"
+import (
+	"path/filepath"
+	"strings"
+
+	"github.com/kryptamine/herdr-auto-title/internal/antigravity"
+	"github.com/kryptamine/herdr-auto-title/internal/state"
+)
 
 // TerminalTitle derives the activity from the pane's terminal title: a title a
 // program went out of its way to set usually says what is happening. A lone
@@ -30,6 +36,11 @@ func (s TerminalTitle) Resolve(pane *state.PaneState) (Parts, bool) {
 		title = pane.TerminalTitleRaw
 	}
 
+	// A shell can leave Antigravity's launch command in the title.
+	if pane.Agent == antigravity.Agent && echoesAntigravityCommand(title) {
+		return Parts{}, false
+	}
+
 	// A shell titles its window with the command it runs, so until the remote
 	// shell sets a title this one only repeats the session the context names.
 	if session, _, remote := remoteOf(pane); remote {
@@ -52,4 +63,15 @@ func (s TerminalTitle) Resolve(pane *state.PaneState) (Parts, bool) {
 	}
 
 	return activityFrom(pane, title)
+}
+
+func echoesAntigravityCommand(title string) bool {
+	words := strings.Fields(Sanitize(title, 0))
+	if len(words) < 2 || words[1] == "-" || !strings.HasPrefix(words[1], "-") {
+		return false
+	}
+
+	command := strings.TrimSuffix(strings.ToLower(filepath.Base(words[0])), ".exe")
+
+	return command == antigravity.Agent
 }

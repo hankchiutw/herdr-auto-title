@@ -128,6 +128,11 @@ which is Pi's working directory; a title Pi did not frame — one an extension s
 — is read as it is, and so is any other agent's title that happens to start the
 same way.
 
+An Antigravity CLI pane can inherit a shell title containing the command that
+launched `agy`, even though the agent emits no title itself. A recognized launch
+command in an `agy` pane declines here, so it cannot hide the session topic.
+Other terminal titles keep their priority.
+
 ### The session transcript
 
 An agent that has titled its terminal has already said what it is doing, sooner
