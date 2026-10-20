@@ -1348,6 +1348,65 @@ func TestATabIsNamedFromTheAgentsOwnSession(t *testing.T) {
 	}
 }
 
+func TestAnAntigravityTabFollowsItsLatestPromptAcrossPolls(t *testing.T) {
+	t.Parallel()
+
+	home := t.TempDir()
+	readstest.Annotation(t, home, testSession, `title:"Original session title"`)
+	history := filepath.Join(home, ".gemini", "antigravity-cli", "history.jsonl")
+
+	initial := `{"conversationId":"` + testSession + `","display":"rework the poll loop"}` + "\n" +
+		`{"conversationId":"` + otherSession + `","display":"Another session's task"}` + "\n"
+	if err := os.WriteFile(history, []byte(initial), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := transcriptConfig()
+	cfg.Home = home
+	h := startConfigured(t, herdrtest.New(
+		[]herdr.TabInfo{{TabID: "wE:t1", Label: "1"}},
+		[]herdr.PaneInfo{{
+			PaneID: "wE:p1", TabID: "wE:t1", CWD: dashboard, Focused: true,
+			TerminalTitleStripped: "agy --sandbox --dang ~/work/dashboard",
+			Agent:                 "agy",
+			AgentStatus:           "working",
+			AgentSession: &herdr.AgentSessionInfo{
+				Agent: "agy", Kind: herdr.SessionRefID, Value: testSession,
+			},
+		}},
+	), cfg)
+	h.poll()
+
+	if got := h.client.Renames(); len(got) != 1 ||
+		got[0].Label != "dashboard › agy › rework the poll loop" {
+		t.Fatalf("renames = %+v, want the first prompt from the pane's session", got)
+	}
+
+	file, err := os.OpenFile(history, os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	appended := `{"conversationId":"` + testSession + `","display":"fix token refresh"}` + "\n" +
+		`{"conversationId":"` + otherSession + `","display":"A different task again"}` + "\n"
+	if _, err := file.WriteString(appended); err != nil {
+		_ = file.Close()
+
+		t.Fatal(err)
+	}
+
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	h.poll()
+
+	if got := h.client.Renames(); len(got) != 2 ||
+		got[1].Label != "dashboard › agy › fix token refresh" {
+		t.Errorf("renames = %+v, want the latest prompt from the pane's session", got)
+	}
+}
+
 func TestTranscriptsAreLeftUnreadWhenTurnedOff(t *testing.T) {
 	t.Parallel()
 

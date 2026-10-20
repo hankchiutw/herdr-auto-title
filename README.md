@@ -68,6 +68,10 @@ herdr integration install antigravity-cli  # Antigravity CLI
 herdr integration install pi               # Pi
 ```
 
+For Antigravity CLI, send a prompt after installing the integration so Herdr
+receives the session id. Its topic follows your latest prompt, with the
+session's generated title as a fallback.
+
 **Show the topic in the sidebar.** Auto Title reports what each workspace's
 active tab is doing as `$topic`, and Herdr draws it only where a sidebar row
 asks for it. This keeps the name and branch on top, with the topic in bold

@@ -218,8 +218,7 @@ head read is its `Head` option, so each package parses only its own lines.
 Three costs are worth stating plainly:
 
 - **It reads what the user said to their agent.** That is why it can be turned
-  off with `HERDR_AUTO_TITLE_TRANSCRIPT=false`, and why nothing else in the
-  plugin reads a file it was not pointed at.
+  off with `HERDR_AUTO_TITLE_TRANSCRIPT=false`.
 - **The format is undocumented.** `custom-title`, `ai-title` and
   `origin.kind` are Claude Code's internals and can change in any release. A
   transcript that no longer carries them yields nothing and the source
@@ -229,27 +228,38 @@ Three costs are worth stating plainly:
   `herdr.AgentSessionInfo.ID` refuses it unless it is shaped like a UUID rather
   than cleaning it, for every agent whose files are found by id.
 
-#### Antigravity CLI annotations
+#### Antigravity CLI history and annotations
 
-Antigravity CLI sets no terminal title at all, so without this source its tab
-carries nothing but the agent's name. Herdr's `agy` integration reports the
-session id the same way the Claude hook does, as `agent_session` with
-`agent: "agy"`, and the agent keeps a title it generated for every session in
-`~/.gemini/antigravity-cli/annotations/<id>.pbtxt`: protobuf text format
-holding one field, `title:"Casual Greeting And Request"`.
+Herdr's `agy` integration reports the session id the same way the Claude hook
+does, as `agent_session` with `agent: "agy"`. Install it with `herdr integration
+install antigravity-cli`, then send a prompt: the integration reports the session
+on `PreInvocation`, not merely when the agent starts or resumes.
 
-`internal/antigravity` reads that field and nothing else. The agent's state
-directory is not configurable, so the reader builds it from the home directory
-rather than taking it from a variable. The same switch turns it off,
-`HERDR_AUTO_TITLE_TRANSCRIPT=false`, and the session id is refused the same way.
+`internal/antigravity` reads the latest non-command prompt for that id from
+`~/.gemini/antigravity-cli/history.jsonl`. Each line carries `display` and may
+carry `conversationId` and `type`. A prompt belongs to a pane only when its
+`conversationId` matches the validated session id Herdr reported. Missing or
+invalid ids cannot name a session, and the history's `workspace` is never used
+to guess: two sessions can share a directory. Entries with a nonempty `type`,
+prompts beginning with `/`, and blank prompts are ignored. Only the prompt's
+first nonblank line, limited to 200 runes, becomes the topic.
 
-Two differences from the transcript are worth knowing:
+The history is shared by every Antigravity CLI session. Each held session has a
+`transcript.Follower` that filters this file by id, reading only appended lines
+after its initial scan. Initial reads and catch-up gaps scan at most the last
+2 MiB, so an older matching prompt can be missed. The follower handles
+truncation and waits for a half-written last line instead of parsing it early.
+Offsets and prompts are forgotten when no pane holds their session.
 
-- **The title is written once**, when the session opens, and is not revised as
-  the conversation moves on. A tab names what the session started as.
-- **It says nothing of where the agent works**, so the topic carries no
-  directory and the branch is the pane's own. The file is a few dozen bytes and
-  is read whole on every poll; nothing is remembered between polls.
+When no matching prompt is available, the reader falls back to
+`~/.gemini/antigravity-cli/annotations/<id>.pbtxt`. Its protobuf text format holds
+one field, `title:"Casual Greeting And Request"`. This generated title is written
+once when the session opens, so the fallback names what the session started as.
+When needed, the small annotation file is read whole on each poll.
+
+Both sources use the agent's fixed state directory under the home directory,
+and `HERDR_AUTO_TITLE_TRANSCRIPT=false` disables both reads. Neither source
+supplies a working directory, so the branch remains the pane's own.
 
 ### Foreground process
 

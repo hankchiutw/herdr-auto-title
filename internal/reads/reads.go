@@ -61,6 +61,7 @@ func (r *Reader) Poll(client herdr.Client, panes []herdr.PaneInfo, drew map[stri
 	// session the snapshot holds without being told which is whose.
 	held := sessionsIn(panes)
 	r.claudeTopics.Retain(held)
+	r.antigravityTitles.Retain(held)
 	r.piTopics.Retain(held)
 
 	return &Poll{
@@ -206,8 +207,8 @@ func (r *Reader) topic(ctx context.Context, pane *state.PaneState, dir string) s
 			return sessionTopic{}
 		}
 
-		// An annotation says nothing of where the agent works, so the pane's own
-		// directory keeps the branch.
+		// History identifies the session, not its current directory, so the
+		// pane's own directory keeps the branch.
 		return sessionTopic{text: r.antigravityTitles.Title(sessionID)}
 	case pi.Agent:
 		path, ok := pane.AgentSession.Path()
