@@ -101,6 +101,8 @@ $HOME                                  →  7 · Shell
   switches to it.
 - The default branch is left out. Other branches are cut down to what
   identifies them: `bugfix-asa-cpanel-uapi-mc-13675` becomes `MC-13675`.
+  A directory named after its branch or carrying an issue key is shortened the
+  same way: `stytrix-beta.st-146-e2e-ai-chat-etc` becomes `ST-146`.
 - A tab with several panes is named after the focused pane, a pane with a busy
   agent, or the pane that changed last.
 - Each pane gets a name of its own, so Herdr's goto panel (`prefix`+`g`) no
@@ -132,7 +134,7 @@ not read.
 | `HERDR_AUTO_TITLE_DEBUG`        | `false`                                  | Log at DEBUG instead of INFO                                       |
 | `HERDR_AUTO_TITLE_POLL_MS`      | `500`                                    | How often the session is read, in milliseconds                     |
 | `HERDR_AUTO_TITLE_MAX_LENGTH`   | `50`                                     | Longest title, in columns                                          |
-| `HERDR_AUTO_TITLE_BRANCH_MAX`   | `12`                                     | Longest branch in a title, in columns; `0` hides branches          |
+| `HERDR_AUTO_TITLE_BRANCH_MAX`   | `12`                                     | Width for branches and directory names matching a branch or carrying an issue key, in columns; `0` hides branch suffixes and keeps directory names whole |
 | `HERDR_AUTO_TITLE_POSITION`     | `true`                                   | Put the tab's position in front of its title                       |
 | `HERDR_AUTO_TITLE_MANUAL_FILE`  | `manual-names.json`, found the same way  | Where names you set by hand are kept; empty keeps them in memory   |
 | `HERDR_AUTO_TITLE_TRANSCRIPT`   | `true`                                   | Read an agent's own session files: what it is doing, and where     |

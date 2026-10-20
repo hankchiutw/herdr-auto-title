@@ -1615,6 +1615,48 @@ func TestAHumanPaneOnAWorktreeStillSaysItsBranchOnce(t *testing.T) {
 	}
 }
 
+func TestALongBranchNamedWorktreeLeavesRoomForTerminalActivity(t *testing.T) {
+	t.Parallel()
+
+	repo := readstest.Repo(t, "main")
+	branch := "bugfix-asatretdinov-cpanel-uapi-mc-13675"
+	worktree := readstest.Worktree(t, repo, branch, branch)
+
+	h := start(t,
+		[]herdr.TabInfo{{TabID: "wE:t1", Label: "1"}},
+		[]herdr.PaneInfo{{
+			PaneID: "wE:p1", TabID: "wE:t1", CWD: worktree, Focused: true,
+			TerminalTitleStripped: "Fix OAuth redirect",
+		}},
+	)
+	h.poll()
+
+	if got, want := h.client.Renames()[0].Label, "MC-13675 › Fix OAuth redirect"; got != want {
+		t.Errorf("rename = %q, want %q", got, want)
+	}
+}
+
+func TestAProjectPrefixedWorktreeSaysItsIssueKeyOnce(t *testing.T) {
+	t.Parallel()
+
+	repo := readstest.Repo(t, "main")
+	worktree := readstest.Worktree(t, repo,
+		"stytrix-beta.st-146-e2e-ai-chat-etc", "st-146-e2e-ai-chat-etc")
+
+	h := start(t,
+		[]herdr.TabInfo{{TabID: "wE:t1", Label: "1"}},
+		[]herdr.PaneInfo{{
+			PaneID: "wE:p1", TabID: "wE:t1", CWD: worktree, Focused: true,
+			TerminalTitleStripped: "Fix AI chat tests",
+		}},
+	)
+	h.poll()
+
+	if got, want := h.client.Renames()[0].Label, "ST-146 › Fix AI chat tests"; got != want {
+		t.Errorf("rename = %q, want %q", got, want)
+	}
+}
+
 func TestAnAgentsWorktreeBranchStandsBesideTheProject(t *testing.T) {
 	t.Parallel()
 

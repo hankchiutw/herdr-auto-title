@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"cmp"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -140,6 +141,7 @@ type Options struct {
 type Deterministic struct {
 	sources       []Source
 	maxLength     int
+	branchMax     int
 	hideAgentName bool
 	showHandle    bool
 }
@@ -164,6 +166,7 @@ func New(opts Options, sources ...Source) *Deterministic {
 	return &Deterministic{
 		sources:       ordered,
 		maxLength:     opts.MaxLength,
+		branchMax:     opts.BranchMax,
 		hideAgentName: opts.HideAgentName,
 		showHandle:    opts.ShowHandle,
 	}
@@ -186,7 +189,7 @@ func Default(opts Options) *Deterministic {
 // Resolve names a tab in three steps: ask the sources what they see, drop the
 // parts that only repeat something already on screen, and assemble the rest.
 func (d *Deterministic) Resolve(tab state.TabState) Decision {
-	return d.nameUnder(d.collect(tab.Context), tab.WorkspaceName)
+	return d.nameUnder(tab.Context, d.collect(tab.Context), tab.WorkspaceName)
 }
 
 // ResolvePanes names each pane of a tab by what tells it from that tab. The row
@@ -203,7 +206,7 @@ func (d *Deterministic) ResolvePanes(tab state.TabState) []Decision {
 			found.parts.Handle = Sanitize(pane.Handle, 0)
 		}
 
-		decisions[i] = d.nameUnder(found, tab.WorkspaceName, above)
+		decisions[i] = d.nameUnder(pane, found, tab.WorkspaceName, above)
 	}
 
 	return decisions
@@ -211,11 +214,24 @@ func (d *Deterministic) ResolvePanes(tab state.TabState) []Decision {
 
 // nameUnder assembles what the chain found into a title, dropping what the
 // workspace row above it says and then what any nearer row does.
-func (d *Deterministic) nameUnder(found collected, workspace string, rows ...Parts) Decision {
-	parts := withoutAbove(withoutRepetition(found.parts), Parts{Context: workspace})
+func (d *Deterministic) nameUnder(
+	pane *state.PaneState, found collected, workspace string, rows ...Parts,
+) Decision {
+	parts := withoutRepetition(found.parts)
+
+	context := d.branchContext(pane, found.parts.Context)
+	if parts.Branch != "" && strings.EqualFold(context, parts.Branch) {
+		parts.Branch = ""
+	}
+
+	parts = withoutAbove(parts, Parts{Context: workspace})
 
 	for _, row := range rows {
 		parts = withoutAbove(parts, row)
+	}
+
+	if parts.Context != "" {
+		parts.Context = context
 	}
 
 	name := Format(parts, d.maxLength)
@@ -228,6 +244,35 @@ func (d *Deterministic) nameUnder(found collected, workspace string, rows ...Par
 	}
 
 	return Decision{Name: name, Confidence: found.confidence, Reason: found.reason}
+}
+
+func (d *Deterministic) branchContext(pane *state.PaneState, context string) string {
+	if pane == nil || d.branchMax <= 0 || context == "" {
+		return context
+	}
+
+	if !strings.EqualFold(context, filepath.Base(pane.Dir)) {
+		return context
+	}
+
+	if !strings.EqualFold(context, pane.Git.Branch) && !trackerKey.MatchString(context) {
+		return context
+	}
+
+	if _, _, remote := remoteOf(pane); remote {
+		return context
+	}
+
+	clean := Sanitize(context, 0)
+	if _, over := splitAtWidth(clean, d.branchMax); over == "" {
+		return context
+	}
+
+	if short := shortenBranch(clean, d.branchMax); short != "" {
+		return short
+	}
+
+	return context
 }
 
 // collected is what the chain produced: the parts of a title, and the source
