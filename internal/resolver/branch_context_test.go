@@ -71,6 +71,73 @@ func TestABranchNamedDirectoryUsesTheBranchWidth(t *testing.T) {
 			max: DefaultBranchMaxLength, want: "stytrix-beta-e2e-ai-chat-etc › " + activity,
 		},
 		{
+			name: "worktrunk directory", directory: "herdr-auto-title.refactor-worktrunk-dir-shorten",
+			branch: "refactor/worktrunk-dir-shorten", trunk: "main",
+			max: DefaultBranchMaxLength, want: "worktrunk › " + activity,
+		},
+		{
+			name: "worktrunk branch without namespace", directory: "dashboard.fix-login-redirect",
+			branch: "fix-login-redirect", trunk: "main",
+			max: DefaultBranchMaxLength, want: "fix-login › " + activity,
+		},
+		{
+			name: "worktrunk default branch", directory: "dashboard.feature-login-redirect",
+			branch: "feature/login-redirect", trunk: "feature/login-redirect",
+			max: DefaultBranchMaxLength, want: "login › " + activity,
+		},
+		{
+			name: "worktrunk case insensitive match", directory: "Dashboard.FEATURE-LOGIN-REDIRECT",
+			branch: "feature/login-redirect", trunk: "main",
+			max: DefaultBranchMaxLength, want: "login › " + activity,
+		},
+		{
+			name: "worktrunk dotted names", directory: "dashboard.web.feature-login.redirect-flow",
+			branch: "feature/login.redirect-flow", trunk: "main",
+			max: DefaultBranchMaxLength, want: "login › " + activity,
+		},
+		{
+			name: "worktrunk short branch", directory: "dashboard-development.feat-auth",
+			branch: "feat/auth", trunk: "main",
+			max: DefaultBranchMaxLength, want: "feat/auth › " + activity,
+		},
+		{
+			name: "worktrunk short directory", directory: "repo.oauth", branch: "oauth", trunk: "main",
+			max: DefaultBranchMaxLength, want: "repo.oauth › oauth › " + activity,
+		},
+		{
+			name: "worktrunk branches disabled", directory: "dashboard.feature-login-redirect",
+			branch: "feature/login-redirect", trunk: "main",
+			max: 0, want: "dashboard.feature-login-redirect › " + activity,
+		},
+		{
+			name: "worktrunk different branch", directory: "dashboard.feature-login-redirect",
+			branch: "feature/oauth-scopes", trunk: "main",
+			max: DefaultBranchMaxLength, want: "dashboard.feature-login-redirect › oauth-scopes › " + activity,
+		},
+		{
+			name: "worktrunk suffix boundary", directory: "dashboard.other-feature-login-redirect",
+			branch: "feature/login-redirect", trunk: "main",
+			max: DefaultBranchMaxLength, want: "dashboard.other-feature-login-redirect › login › " + activity,
+		},
+		{
+			name: "worktrunk different punctuation", directory: "dashboard.xl-knp-3",
+			branch: "xl-knp.3", trunk: "main",
+			max: DefaultBranchMaxLength, want: "dashboard.xl-knp-3 › xl-knp.3 › " + activity,
+		},
+		{
+			name: "worktrunk without checkout", directory: "dashboard.feature-login-redirect",
+			max: DefaultBranchMaxLength, want: "dashboard.feature-login-redirect › " + activity,
+		},
+		{
+			name: "worktrunk separator-only branch", directory: "dashboard.______________",
+			branch: "______________", trunk: "main",
+			max: DefaultBranchMaxLength, want: "dashboard.______________ › " + activity,
+		},
+		{
+			name: "directory without branch", directory: "dashboard-development.",
+			max: DefaultBranchMaxLength, want: "dashboard-development. › " + activity,
+		},
+		{
 			name: "project prefix without checkout", directory: "stytrix-beta.st-146-e2e-ai-chat-etc",
 			max: DefaultBranchMaxLength, want: "ST-146 › " + activity,
 		},
@@ -112,51 +179,62 @@ func TestABranchDirectoryIsComparedBeforeShortening(t *testing.T) {
 	t.Parallel()
 
 	const (
-		directory = "stytrix-beta.st-146-e2e-ai-chat-etc"
-		branch    = "st-146-e2e-ai-chat-etc"
-		activity  = "Fix OAuth redirect"
-		wide      = 100
+		activity = "Fix OAuth redirect"
+		wide     = 100
 	)
 
-	for _, test := range []struct {
-		name, workspace, title, handle, want string
-		paneLabel                            bool
+	for _, fixture := range []struct {
+		directory, branch, short string
 	}{
-		{name: "workspace", workspace: directory, title: activity, want: activity},
-		{name: "activity", title: directory, want: "ST-146"},
-		{name: "tab above pane", title: activity, paneLabel: true, want: activity},
 		{
-			name: "handle", title: activity, handle: directory, paneLabel: true,
-			want: directory + " › " + activity,
+			directory: "stytrix-beta.st-146-e2e-ai-chat-etc",
+			branch:    "st-146-e2e-ai-chat-etc", short: "ST-146",
 		},
 		{
-			name: "different full workspace", workspace: "ST-146", title: activity,
-			want: "ST-146 › " + activity,
+			directory: "herdr-auto-title.refactor-worktrunk-dir-shorten",
+			branch:    "refactor/worktrunk-dir-shorten", short: "worktrunk",
 		},
 	} {
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
+		for _, test := range []struct {
+			name, workspace, title, handle, want string
+			paneLabel                            bool
+		}{
+			{name: "workspace", workspace: fixture.directory, title: activity, want: activity},
+			{name: "activity", title: fixture.directory, want: fixture.short},
+			{name: "tab above pane", title: activity, paneLabel: true, want: activity},
+			{
+				name: "handle", title: activity, handle: fixture.directory, paneLabel: true,
+				want: fixture.directory + " › " + activity,
+			},
+			{
+				name: "different full workspace", workspace: fixture.short, title: activity,
+				want: fixture.short + " › " + activity,
+			},
+		} {
+			t.Run(fixture.directory+"/"+test.name, func(t *testing.T) {
+				t.Parallel()
 
-			pane := repoPane(branch, "main")
-			pane.Dir = filepath.Join(filepath.Dir(dashboard), directory)
-			pane.TerminalTitle = test.title
-			pane.Handle = test.handle
-			tab := tabWithPane(pane)
-			tab.WorkspaceName = test.workspace
+				pane := repoPane(fixture.branch, "main")
+				pane.Dir = filepath.Join(filepath.Dir(dashboard), fixture.directory)
+				pane.TerminalTitle = test.title
+				pane.Handle = test.handle
+				tab := tabWithPane(pane)
+				tab.WorkspaceName = test.workspace
 
-			chain := Default(Options{
-				MaxLength: wide, BranchMax: DefaultBranchMaxLength, ShowHandle: true,
+				chain := Default(Options{
+					MaxLength: wide, BranchMax: DefaultBranchMaxLength, ShowHandle: true,
+				})
+
+				got := chain.Resolve(tab).Name
+				if test.paneLabel {
+					got = chain.ResolvePanes(tab)[0].Name
+				}
+
+				if got != test.want {
+					t.Errorf("title = %q, want %q", got, test.want)
+				}
 			})
-
-			got := chain.Resolve(tab).Name
-			if test.paneLabel {
-				got = chain.ResolvePanes(tab)[0].Name
-			}
-
-			if got != test.want {
-				t.Errorf("title = %q, want %q", got, test.want)
-			}
-		})
+		}
 	}
 }
 

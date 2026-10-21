@@ -106,6 +106,8 @@ $HOME                                  →  7 · Shell
   identifies them: `bugfix-asa-cpanel-uapi-mc-13675` becomes `MC-13675`.
   A directory named after its branch or carrying an issue key is shortened the
   same way: `stytrix-beta.st-146-e2e-ai-chat-etc` becomes `ST-146`.
+  Worktrunk's `repo.branch` folders use the original branch name:
+  `herdr-auto-title.refactor-worktrunk-dir-shorten` becomes `worktrunk`.
 - A tab with several panes is named after the focused pane, a pane with a busy
   agent, or the pane that changed last.
 - Each pane gets a name of its own, so Herdr's goto panel (`prefix`+`g`) no

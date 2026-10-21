@@ -255,7 +255,12 @@ func (d *Deterministic) branchContext(pane *state.PaneState, context string) str
 		return context
 	}
 
-	if !strings.EqualFold(context, pane.Git.Branch) && !trackerKey.MatchString(context) {
+	branch := pane.Git.Branch
+
+	worktrunk := branch != "" && strings.HasSuffix(
+		strings.ToLower(context), "."+strings.ToLower(strings.ReplaceAll(branch, "/", "-")),
+	)
+	if !strings.EqualFold(context, branch) && !worktrunk && !trackerKey.MatchString(context) {
 		return context
 	}
 
@@ -266,6 +271,10 @@ func (d *Deterministic) branchContext(pane *state.PaneState, context string) str
 	clean := Sanitize(context, 0)
 	if _, over := splitAtWidth(clean, d.branchMax); over == "" {
 		return context
+	}
+
+	if worktrunk {
+		clean = Sanitize(branch, 0)
 	}
 
 	if short := shortenBranch(clean, d.branchMax); short != "" {
