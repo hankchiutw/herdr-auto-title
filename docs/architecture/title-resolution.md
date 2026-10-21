@@ -590,6 +590,12 @@ its full basename matches the pane's own branch or carries a tracker key.
 checkout metadata: the directory's key already identifies the work. A branch
 suffix reduced to the same label is dropped too, so the key appears only once.
 
+Worktrunk's `repo.branch` directories also qualify when the suffix matches the
+pane's own branch with `/` replaced by `-`. The original branch supplies the
+abbreviation, so its namespace is still recognized:
+`herdr-auto-title.refactor-worktrunk-dir-shorten` becomes `worktrunk`. Dots in
+the project or branch name stay intact, and a partial suffix never matches.
+
 Short names and directories with neither a matching branch nor a tracker key
 stay whole; `BranchMax=0` leaves directory names unchanged. A name with no usable
 abbreviation stays whole too, so a narrow bound cannot erase the context. A long
@@ -606,7 +612,8 @@ Only the pane's own directory supplies context. An agent sent into a worktree
 still leaves the project context at the pane's directory; its branch stays
 alongside that context unless the two displayed labels repeat the same value.
 
-Names with neither a matching branch nor a tracker key retain exact comparison.
+Outside Worktrunk's slash replacement, names with neither a matching branch
+nor a tracker key retain exact comparison.
 A worktree whose directory spells its branch differently (`xl-knp-3` against
 `xl-knp.3`) keeps both, because nothing here can tell a near-miss from two real
 facts.
