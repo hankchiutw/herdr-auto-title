@@ -341,9 +341,14 @@ reads, so this section describes Herdr rather than those types.
 - **An Antigravity CLI pane reports `agent: "agy"`** and, with its integration
   installed, an `agent_session` of `agent: "agy"`, `kind: "id"` and
   `source: "herdr:antigravity_cli"`. Without the integration the pane still
-  reports `agent: "agy"` but no `agent_session` at all. It sets no terminal
-  title, so `terminal_title` is absent from its pane object. Measured on Herdr
-  0.9.0.
+  reports `agent: "agy"` but no `agent_session` at all. Antigravity CLI emitted
+  no terminal title in the probe, and `terminal_title` was absent from that
+  pane object. Measured on Herdr 0.9.0.
+- **An Antigravity CLI pane can still carry its shell's launch command as a
+  terminal title.** A live probe on Herdr 0.9.3 found the `agy` command in
+  `terminal_title_stripped` although the agent emitted no title. An absent
+  agent title does not imply an absent pane terminal title. The resolver
+  declines recognized `agy` launch commands while preserving other titles.
 - **An Antigravity CLI pane's session moves on the first prompt, not on
   `/resume`.** The integration's hook runs only on `PreInvocation`, so after a
   resume `agent_session` keeps naming the session left behind until a prompt is

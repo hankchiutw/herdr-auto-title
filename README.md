@@ -60,14 +60,17 @@ prompt_new_tab_name = false
 
 **Install Herdr's integration for each agent you use.** It tells Auto Title
 which session a pane holds, so the tab is named after that session. Without it,
-a tab says only what the agent puts in its terminal title, and for Antigravity
-CLI that is nothing but `agy`.
+Auto Title can use terminal titles but cannot read that session's topic.
 
 ```sh
 herdr integration install claude           # Claude Code
 herdr integration install antigravity-cli  # Antigravity CLI
 herdr integration install pi               # Pi
 ```
+
+For Antigravity CLI, send a prompt after installing the integration so Herdr
+receives the session id. Its topic follows your latest prompt, with the
+session's generated title as a fallback.
 
 **Show the topic in the sidebar.** Auto Title reports what each workspace's
 active tab is doing as `$topic`, and Herdr draws it only where a sidebar row

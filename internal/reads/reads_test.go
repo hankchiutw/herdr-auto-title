@@ -839,6 +839,12 @@ func TestTranscriptsSwitchedOffLeaveAnAntigravitySessionUnread(t *testing.T) {
 	opts := branchOptions()
 	opts.Home = t.TempDir()
 	readstest.Annotation(t, opts.Home, testSession, `title:"Casual Greeting And Request"`)
+	history := filepath.Join(opts.Home, ".gemini", "antigravity-cli", "history.jsonl")
+
+	content := `{"conversationId":"` + testSession + `","display":"Current request"}` + "\n"
+	if err := os.WriteFile(history, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
 
 	pane := antigravityPaneAt("wE:p1", testSession, t.TempDir())
 	readOne(opts, pane)

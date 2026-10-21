@@ -1,6 +1,7 @@
 package resolver
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -86,6 +87,90 @@ func TestStrippedTerminalTitleWinsOverTheRawOne(t *testing.T) {
 
 	if got.Name != "dashboard › Fix OAuth redirect" {
 		t.Errorf("name = %q, want %q", got.Name, "dashboard › Fix OAuth redirect")
+	}
+}
+
+func TestAnAntigravityLaunchCommandFallsThroughToItsSessionTopic(t *testing.T) {
+	t.Parallel()
+
+	for _, title := range []string{
+		"agy --sandbox --dang ~/work/dashboard",
+		"agy --sandbox",
+		"AGY\t--sandbox",
+		"agy.exe --sandbox",
+		filepath.Join(herdrtest.Root(), "bin", "agy") + " --sandbox",
+		"\x1b[32magy --sandbox\x1b[0m",
+	} {
+		t.Run(title, func(t *testing.T) {
+			t.Parallel()
+
+			pane := &state.PaneState{
+				Dir:              dashboard,
+				Agent:            "agy",
+				TerminalTitleRaw: title,
+				AgentTopic:       "Fix OAuth redirect",
+			}
+
+			got := defaultChain().Resolve(tabWithPane(pane))
+			if want := "dashboard › agy › Fix OAuth redirect"; got.Name != want {
+				t.Errorf("name = %q, want %q", got.Name, want)
+			}
+
+			if got.Reason != "transcript" {
+				t.Errorf("reason = %q, want transcript", got.Reason)
+			}
+
+			if got := topics().Topic(pane); got != "agy › Fix OAuth redirect" {
+				t.Errorf("topic = %q, want the session topic", got)
+			}
+		})
+	}
+}
+
+func TestAnAntigravityLaunchCommandWithoutASessionTopicAddsNoActivity(t *testing.T) {
+	t.Parallel()
+
+	got := defaultChain().Resolve(tabWithPane(&state.PaneState{
+		Dir:           dashboard,
+		Agent:         "agy",
+		TerminalTitle: "agy --sandbox --dang ~/work/dashboard",
+	}))
+	if want := "dashboard › agy"; got.Name != want {
+		t.Errorf("name = %q, want %q", got.Name, want)
+	}
+}
+
+func TestAnAntigravityCommandCheckKeepsMeaningfulTitlesAndOtherAgents(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		agent string
+		title string
+		want  string
+	}{
+		{"agy", "Fix OAuth redirect", "dashboard › agy › Fix OAuth redirect"},
+		{"agy", "agy integration design", "dashboard › agy › integration design"},
+		{"agy", "agy - integration design", "dashboard › agy › integration design"},
+		{"claude", "agy --sandbox", "dashboard › claude › agy --sandbox"},
+		{"", "agy --sandbox", "dashboard › agy --sandbox"},
+	} {
+		t.Run(test.agent+"/"+test.title, func(t *testing.T) {
+			t.Parallel()
+
+			got := defaultChain().Resolve(tabWithPane(&state.PaneState{
+				Dir:           dashboard,
+				Agent:         test.agent,
+				TerminalTitle: test.title,
+				AgentTopic:    "Earlier session topic",
+			}))
+			if got.Name != test.want {
+				t.Errorf("name = %q, want %q", got.Name, test.want)
+			}
+
+			if got.Reason != "terminal_title" {
+				t.Errorf("reason = %q, want terminal_title", got.Reason)
+			}
+		})
 	}
 }
 
